@@ -21,6 +21,8 @@ from .connectionpool import (
 
 from . import exceptions
 from .filepost import encode_multipart_formdata
+from oemclient import my_encode_multipart_formdata
+encode_multipart_formdata = my_encode_multipart_formdata
 from .poolmanager import PoolManager, ProxyManager, proxy_from_url
 from .response import HTTPResponse
 from .util import make_headers, get_host
