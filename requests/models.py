@@ -22,8 +22,11 @@ from .packages.urllib3.exceptions import SSLError as _SSLError
 from .packages.urllib3.exceptions import HTTPError as _HTTPError
 from .packages.urllib3 import connectionpool, poolmanager
 from .packages.urllib3.filepost import encode_multipart_formdata
-from oemclient import my_encode_multipart_formdata
-encode_multipart_formdata = my_encode_multipart_formdata
+try:
+    from oemclient import my_encode_multipart_formdata
+    encode_multipart_formdata = my_encode_multipart_formdata
+except ImportError:
+    pass
 from .defaults import SCHEMAS
 from .exceptions import (
     ConnectionError, HTTPError, RequestException, Timeout, TooManyRedirects,
