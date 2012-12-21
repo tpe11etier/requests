@@ -102,6 +102,18 @@ Patches and Suggestions
 - Roman Haritonov <@reclosedev>
 - Josh Imhoff <joshimhoff13@gmail.com>
 - Arup Malakar <amalakar@gmail.com>
-- Danilo Bargen (gwrtheyrn)
+- Danilo Bargen (dbrgn)
 - Torsten Landschoff
 - Michael Holler (apotheos)
+- Timnit Gebru
+- Sarah Gonzalez
+- Victoria Mo
+- Leila Muhtasib
+- Matthias Rahlf <matthias@webding.de>
+- Jakub Roztocil <jakub@roztocil.name>
+- Ian Cordasco <graffatcolmingov@gmail.com> @sigmavirus24
+- Rhys Elsmore
+- André Graf (dergraf)
+- Stephen Zhuang (everbird)
+- Martijn Pieters
+- Jonatan Heyman

@@ -2,9 +2,10 @@ Requests: HTTP for Humans
 =========================
 
 
-.. image:: https://secure.travis-ci.org/kennethreitz/requests.png?branch=develop
+.. image:: https://travis-ci.org/kennethreitz/requests.png?branch=master
+        :target: https://travis-ci.org/kennethreitz/requests
 
-Requests is an ISC Licensed HTTP library, written in Python, for human
+Requests is an Apache2 Licensed HTTP library, written in Python, for human
 beings.
 
 Most existing Python modules for sending HTTP requests are extremely
@@ -15,7 +16,7 @@ perform the simplest of tasks.
 
 Things shouldn't be this way. Not in Python.
 
-::
+.. code-block:: pycon
 
     >>> r = requests.get('https://api.github.com', auth=('user', 'pass'))
     >>> r.status_code
@@ -53,11 +54,15 @@ Features
 Installation
 ------------
 
-To install requests, simply: ::
+To install requests, simply:
+
+.. code-block:: bash
 
     $ pip install requests
 
-Or, if you absolutely must: ::
+Or, if you absolutely must:
+
+.. code-block:: bash
 
     $ easy_install requests
 
@@ -74,4 +79,4 @@ Contribute
 #. Send a pull request and bug the maintainer until it gets merged and published. :) Make sure to add yourself to AUTHORS_.
 
 .. _`the repository`: http://github.com/kennethreitz/requests
-.. _AUTHORS: https://github.com/kennethreitz/requests/blob/develop/AUTHORS.rst
+.. _AUTHORS: https://github.com/kennethreitz/requests/blob/master/AUTHORS.rst

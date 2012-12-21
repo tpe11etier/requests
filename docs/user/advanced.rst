@@ -93,28 +93,41 @@ I don't have SSL setup on this domain, so it fails. Excellent. Github does thoug
 
 You can also pass ``verify`` the path to a CA_BUNDLE file for private certs. You can also set the ``REQUESTS_CA_BUNDLE`` environment variable.
 
+Requests can also ignore verifying the SSL certficate if you set ``verify`` to False.
+
+::
+
+    >>> requests.get('https://kennethreitz.com', verify=False)
+    <Response [200]>
+
+By default, ``verify`` is set to True. Option ``verify`` only applies to host certs.
+
+You can also specify the local cert file either as a path or key value pair::
+
+    >>> requests.get('https://kennethreitz.com', cert=('/path/server.crt', '/path/key'))
+    <Response [200]>
+
+If you specify a wrong path or an invalid cert::
+
+    >>> requests.get('https://kennethreitz.com', cert='/wrong_path/server.pem')
+    SSLError: [Errno 336265225] _ssl.c:347: error:140B0009:SSL routines:SSL_CTX_use_PrivateKey_file:PEM lib
+
 
 Body Content Workflow
 ---------------------
 
-By default, when you make a request, the body of the response isn't downloaded immediately. The response headers are downloaded when you make a request, but the content isn't downloaded until you access the :class:`Response.content` attribute.
-
-Let's walk through it::
+By default, when you make a request, the body of the response is downloaded immediately. You can override this behavior and defer downloading the response body until you access the :class:`Response.content` attribute with the ``stream`` parameter::
 
     tarball_url = 'https://github.com/kennethreitz/requests/tarball/master'
-    r = requests.get(tarball_url)
+    r = requests.get(tarball_url, stream=True)
 
-The request has been made, but the connection is still open. The response body has not been downloaded yet. ::
+At this point only the response headers have been downloaded and the connection remains open, hence allowing us to make content retrieval conditional::
 
-    r.content
+    if int(r.headers['content-length']) < TOO_LONG:
+      content = r.content
+      ...
 
-The content has been downloaded and cached.
-
-You can override this default behavior with the ``prefetch`` parameter::
-
-    r = requests.get(tarball_url, prefetch=True)
-    # Blocks until all of request body has been downloaded.
-
+You can further control the workflow by use of the :class:`Response.iter_content` and :class:`Response.iter_lines` methods, or reading from the underlying urllib3 :class:`urllib3.HTTPResponse` at :class:`Response.raw`.
 
 Configuring Requests
 --------------------
@@ -128,19 +141,7 @@ Keep-Alive
 
 Excellent news — thanks to urllib3, keep-alive is 100% automatic within a session! Any requests that you make within a session will automatically reuse the appropriate connection!
 
-Note that connections are only released back to the pool for reuse once all body data has been read; be sure to either set ``prefetch`` to ``True`` or read the ``content`` property of the ``Response`` object.
-
-If you'd like to disable keep-alive, you can simply set the ``keep_alive`` configuration to ``False``::
-
-    s = requests.session()
-    s.config['keep_alive'] = False
-
-
-Asynchronous Requests
-----------------------
-
-
-``requests.async`` has been removed from requests and is now its own repository named `GRequests <https://github.com/kennethreitz/grequests>`_.
+Note that connections are only released back to the pool for reuse once all body data has been read; be sure to either set ``stream`` to ``False`` or read the ``content`` property of the ``Response`` object.
 
 
 Event Hooks
@@ -151,15 +152,6 @@ the request process, or signal event handling.
 
 Available hooks:
 
-``args``:
-    A dictionary of the arguments being sent to Request().
-
-``pre_request``:
-    The Request object, directly before being sent.
-
-``post_request``:
-    The Request object, directly after being sent.
-
 ``response``:
     The response generated from a Request.
 
@@ -168,15 +160,15 @@ You can assign a hook function on a per-request basis by passing a
 ``{hook_name: callback_function}`` dictionary to the ``hooks`` request
 parameter::
 
-    hooks=dict(args=print_url)
+    hooks=dict(response=print_url)
 
 That ``callback_function`` will receive a chunk of data as its first
 argument.
 
 ::
 
-    def print_url(args):
-        print args['url']
+    def print_url(r):
+        print(r.url)
 
 If an error occurs while executing your callback, a warning is given.
 
@@ -186,40 +178,9 @@ anything, nothing else is effected.
 
 Let's print some request method arguments at runtime::
 
-    >>> requests.get('http://httpbin.org', hooks=dict(args=print_url))
+    >>> requests.get('http://httpbin.org', hooks=dict(response=print_url))
     http://httpbin.org
     <Response [200]>
-
-Let's hijack some arguments this time with a new callback::
-
-    def hack_headers(args):
-        if args.get('headers') is None:
-            args['headers'] = dict()
-
-        args['headers'].update({'X-Testing': 'True'})
-
-        return args
-
-    hooks = dict(args=hack_headers)
-    headers = dict(yo=dawg)
-
-And give it a try::
-
-    >>> requests.get('http://httpbin.org/headers', hooks=hooks, headers=headers)
-    {
-        "headers": {
-            "Content-Length": "",
-            "Accept-Encoding": "gzip",
-            "Yo": "dawg",
-            "X-Forwarded-For": "::ffff:24.127.96.129",
-            "Connection": "close",
-            "User-Agent": "python-requests.org",
-            "Host": "httpbin.org",
-            "X-Testing": "True",
-            "X-Forwarded-Protocol": "",
-            "Content-Type": ""
-        }
-    }
 
 
 Custom Authentication
@@ -262,42 +223,24 @@ Streaming Requests
 With ``requests.Response.iter_lines()`` you can easily iterate over streaming
 APIs such as the `Twitter Streaming API <https://dev.twitter.com/docs/streaming-api>`_.
 
-To use the Twitter Streaming API to track the keyword "requests":
-
-::
+To use the Twitter Streaming API to track the keyword "requests"::
 
     import requests
     import json
 
     r = requests.post('https://stream.twitter.com/1/statuses/filter.json',
-        data={'track': 'requests'}, auth=('username', 'password'))
+        data={'track': 'requests'}, auth=('username', 'password'), stream=True)
 
     for line in r.iter_lines():
         if line: # filter out keep-alive new lines
             print json.loads(line)
 
 
-Verbose Logging
----------------
-
-If you want to get a good look at what HTTP requests are being sent
-by your application, you can turn on verbose logging.
-
-To do so, just configure Requests with a stream to write to::
-
-    >>> my_config = {'verbose': sys.stderr}
-    >>> requests.get('http://httpbin.org/headers', config=my_config)
-    2011-08-17T03:04:23.380175   GET   http://httpbin.org/headers
-    <Response [200]>
-
-
 Proxies
 -------
 
 If you need to use a proxy, you can configure individual requests with the
-``proxies`` argument to any request method:
-
-::
+``proxies`` argument to any request method::
 
     import requests
 
@@ -318,14 +261,37 @@ You can also configure proxies by environment variables ``HTTP_PROXY`` and ``HTT
     >>> import requests
     >>> requests.get("http://example.org")
 
-To use HTTP Basic Auth with your proxy, use the `http://user:password@host/` syntax:
-
-::
+To use HTTP Basic Auth with your proxy, use the `http://user:password@host/` syntax::
 
     proxies = {
         "http": "http://user:pass@10.10.1.10:3128/",
     }
 
+Compliance
+----------
+
+Requests is intended to be compliant with all relevant specifications and
+RFCs where that compliance will not cause difficulties for users. This
+attention to the specification can lead to some behaviour that may seem
+unusual to those not familiar with the relevant specification.
+
+Encodings
+^^^^^^^^^
+
+When you receive a response, Requests makes a guess at the encoding to use for
+decoding the response when you call the ``Response.text`` method. Requests
+will first check for an encoding in the HTTP header, and if none is present,
+will use `charade <http://pypi.python.org/pypi/charade>`_ to attempt to guess
+the encoding.
+
+The only time Requests will not do this is if no explicit charset is present
+in the HTTP headers **and** the ``Content-Type`` header contains ``text``. In
+this situation,
+`RFC 2616 <http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.7.1>`_
+specifies that the default charset must be ``ISO-8859-1``. Requests follows
+the specification in this case. If you require a different encoding, you can
+manually set the ``Response.encoding`` property, or use the raw
+``Response.content``.
 
 HTTP Verbs
 ----------
@@ -357,7 +323,9 @@ into Python objects. Because GitHub returned UTF-8, we should use the
 ``r.text`` method, not the ``r.content`` method. ``r.content`` returns a
 bytestring, while ``r.text`` returns a Unicode-encoded string. I have no plans
 to perform byte-manipulation on this response, so I want any Unicode code
-points encoded.::
+points encoded.
+
+::
 
     >>> import json
     >>> commit_data = json.loads(r.text)
@@ -371,7 +339,9 @@ points encoded.::
 So far, so simple. Well, let's investigate the GitHub API a little bit. Now,
 we could look at the documentation, but we might have a little more fun if we
 use Requests instead. We can take advantage of the Requests OPTIONS verb to
-see what kinds of HTTP methods are supported on the url we just used.::
+see what kinds of HTTP methods are supported on the url we just used.
+
+::
 
     >>> verbs = requests.options(r.url)
     >>> verbs.status_code
@@ -381,7 +351,9 @@ Uh, what? That's unhelpful! Turns out GitHub, like many API providers, don't
 actually implement the OPTIONS method. This is an annoying oversight, but it's
 OK, we can just use the boring documentation. If GitHub had correctly
 implemented OPTIONS, however, they should return the allowed methods in the
-headers, e.g.::
+headers, e.g.
+
+::
 
     >>> verbs = requests.options('http://a-good-website.com/api/cats')
     >>> print verbs.headers['allow']
@@ -393,7 +365,9 @@ we should probably avoid making ham-handed POSTS to it. Instead, let's play
 with the Issues feature of GitHub.
 
 This documentation was added in response to Issue #482. Given that this issue
-already exists, we will use it as an example. Let's start by getting it.::
+already exists, we will use it as an example. Let's start by getting it.
+
+::
 
     >>> r = requests.get('https://api.github.com/repos/kennethreitz/requests/issues/482')
     >>> r.status_code
@@ -404,7 +378,9 @@ already exists, we will use it as an example. Let's start by getting it.::
     >>> print issue[u'comments']
     3
 
-Cool, we have three comments. Let's take a look at the last of them.::
+Cool, we have three comments. Let's take a look at the last of them.
+
+::
 
     >>> r = requests.get(r.url + u'/comments')
     >>> r.status_code
@@ -416,14 +392,18 @@ Cool, we have three comments. Let's take a look at the last of them.::
     Probably in the "advanced" section
 
 Well, that seems like a silly place. Let's post a comment telling the poster
-that he's silly. Who is the poster, anyway?::
+that he's silly. Who is the poster, anyway?
+
+::
 
     >>> print comments[2][u'user'][u'login']
     kennethreitz
 
 OK, so let's tell this Kenneth guy that we think this example should go in the
 quickstart guide instead. According to the GitHub API doc, the way to do this
-is to POST to the thread. Let's do it.::
+is to POST to the thread. Let's do it.
+
+::
 
     >>> body = json.dumps({u"body": u"Sounds great! I'll get right on it!"})
     >>> url = u"https://api.github.com/repos/kennethreitz/requests/issues/482/comments"
@@ -433,7 +413,9 @@ is to POST to the thread. Let's do it.::
 
 Huh, that's weird. We probably need to authenticate. That'll be a pain, right?
 Wrong. Requests makes it easy to use many forms of authentication, including
-the very common Basic Auth.::
+the very common Basic Auth.
+
+::
 
     >>> from requests.auth import HTTPBasicAuth
     >>> auth = HTTPBasicAuth('fake@example.com', 'not_a_real_password')
@@ -447,7 +429,9 @@ the very common Basic Auth.::
 Brilliant. Oh, wait, no! I meant to add that it would take me a while, because
 I had to go feed my cat. If only I could edit this comment! Happily, GitHub
 allows us to use another HTTP verb, PATCH, to edit this comment. Let's do
-that.::
+that.
+
+::
 
     >>> print content[u"id"]
     5804413
@@ -460,7 +444,9 @@ that.::
 Excellent. Now, just to torture this Kenneth guy, I've decided to let him
 sweat and not tell him that I'm working on this. That means I want to delete
 this comment. GitHub lets us delete comments using the incredibly aptly named
-DELETE method. Let's get rid of it.::
+DELETE method. Let's get rid of it.
+
+::
 
     >>> r = requests.delete(url=url, auth=auth)
     >>> r.status_code
@@ -471,14 +457,37 @@ DELETE method. Let's get rid of it.::
 Excellent. All gone. The last thing I want to know is how much of my ratelimit
 I've used. Let's find out. GitHub sends that information in the headers, so
 rather than download the whole page I'll send a HEAD request to get the
-headers.::
+headers.
+
+::
 
     >>> r = requests.head(url=url, auth=auth)
     >>> print r.headers
-    // ...snip... //
+    ...
     'x-ratelimit-remaining': '4995'
     'x-ratelimit-limit': '5000'
-    // ...snip... //
+    ...
 
 Excellent. Time to write a Python program that abuses the GitHub API in all
 kinds of exciting ways, 4995 more times.
+
+Link Headers
+------------
+
+Many HTTP APIs feature Link headers. They make APIs more self describing and discoverable.
+
+GitHub uses these for `pagination <http://developer.github.com/v3/#pagination>`_ in their API, for example::
+
+    >>> url = 'https://api.github.com/users/kennethreitz/repos?page=1&per_page=10'
+    >>> r = requests.head(url=url)
+    >>> r.headers['link']
+    '<https://api.github.com/users/kennethreitz/repos?page=2&per_page=10>; rel="next", <https://api.github.com/users/kennethreitz/repos?page=6&per_page=10>; rel="last"'
+
+Requests will automatically parse these link headers and make them easily consumable::
+
+    >>> r.links['next']
+    'https://api.github.com/users/kennethreitz/repos?page=2&per_page=10'
+
+    >>> r.links['last']
+    'https://api.github.com/users/kennethreitz/repos?page=6&per_page=10'
+

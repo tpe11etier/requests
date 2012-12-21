@@ -3,7 +3,122 @@
 History
 -------
 
-- Response.reason
+1.0.3 (2012-12-18)
+++++++++++++++++++
+
+- Fix file upload encoding bug
+- Fix cookie behavior
+
+1.0.2 (2012-12-17)
+++++++++++++++++++
+
+- Proxy fix for HTTPAdapter.
+
+1.0.1 (2012-12-17)
+++++++++++++++++++
+
+- Cert verification exception bug.
+- Proxy fix for HTTPAdapter.
+
+1.0.0 (2012-12-17)
+++++++++++++++++++
+
+- Massive Refactor and Simplification
+- Switch to Apache 2.0 license
+- Swappable Connection Adapters
+- Mountable Connection Adapters
+- Mutable ProcessedRequest chain
+- /s/prefetch/stream
+- Removal of all configuration
+- Standard library logging
+- Make Reponse.json() callable, not property.
+- Usage of new charade project, which provides python 2 and 3 simultaneous chardet.
+- Removal of all hooks except 'response'
+- Removal of all authentication helpers (OAuth, Kerberos)
+
+This is not a backwards compatible change.
+
+0.14.2 (2012-10-27)
++++++++++++++++++++
+
+- Improved mime-compatible JSON handling
+- Proxy fixes
+- Path hack fixes
+- Case-Insensistive Content-Encoding headers
+- Support for CJK parameters in form posts
+
+
+0.14.1 (2012-10-01)
++++++++++++++++++++
+
+- Python 3.3 Compatibility
+- Simply default accept-encoding
+- Bugfixes
+
+
+0.14.0 (2012-09-02)
+++++++++++++++++++++
+
+- No more iter_content errors if already downloaded.
+
+0.13.9 (2012-08-25)
++++++++++++++++++++
+
+- Fix for OAuth + POSTs
+- Remove exception eating from dispatch_hook
+- General bugfixes
+
+0.13.8 (2012-08-21)
++++++++++++++++++++
+
+- Incredible Link header support :)
+
+0.13.7 (2012-08-19)
++++++++++++++++++++
+
+- Support for (key, value) lists everywhere.
+- Digest Authentication improvements.
+- Ensure proxy exclusions work properly.
+- Clearer UnicodeError exceptions.
+- Automatic casting of URLs to tsrings (fURL and such)
+- Bugfixes.
+
+0.13.6 (2012-08-06)
++++++++++++++++++++
+
+- Long awaited fix for hanging connections!
+
+0.13.5 (2012-07-27)
++++++++++++++++++++
+
+- Packaging fix
+
+0.13.4 (2012-07-27)
++++++++++++++++++++
+
+- GSSAPI/Kerberos authentication!
+- App Engine 2.7 Fixes!
+- Fix leaking connections (from urllib3 update)
+- OAuthlib path hack fix
+- OAuthlib URL parameters fix.
+
+0.13.3 (2012-07-12)
++++++++++++++++++++
+
+- Use simplejson if available.
+- Do not hide SSLErrors behind Timeouts.
+- Fixed param handling with urls containing fragments.
+- Significantly improved information in User Agent.
+- client certificates are ignored when verify=False
+
+0.13.2 (2012-06-28)
++++++++++++++++++++
+
+- Zero dependencies (once again)!
+- New: Response.reason
+- Sign querystring parameters in OAuth 1.0
+- Client certificates no longer ignored when verify=False
+- Add openSUSE certificate support
 
 0.13.1 (2012-06-07)
 +++++++++++++++++++

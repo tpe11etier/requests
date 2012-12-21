@@ -24,7 +24,7 @@ Make a Request
 Making a request with Requests is very simple.
 
 Begin by importing the Requests module::
-    
+
     >>> import requests
 
 Now, let's try to get a webpage. For this example, let's get GitHub's public
@@ -37,12 +37,12 @@ information we need from this object.
 
 Requests' simple API means that all forms of HTTP request are as obvious. For
 example, this is how you make an HTTP POST request::
-    
+
     >>> r = requests.post("http://httpbin.org/post")
 
 Nice, right? What about the other HTTP request types: PUT, DELETE, HEAD and
 OPTIONS? These are all just as simple::
-    
+
     >>> r = requests.put("http://httpbin.org/put")
     >>> r = requests.delete("http://httpbin.org/delete")
     >>> r = requests.head("http://httpbin.org/get")
@@ -70,7 +70,7 @@ You can see that the URL has been correctly encoded by printing the URL::
 
     >>> print r.url
     u'http://httpbin.org/get?key2=value2&key1=value1'
-    
+
 
 Response Content
 ----------------
@@ -86,12 +86,22 @@ again::
 Requests will automatically decode content from the server. Most unicode
 charsets are seamlessly decoded.
 
-When you make a request, ``r.encoding`` is set, based on the HTTP headers.
-Requests will use that encoding when you access ``r.text``.  If ``r.encoding``
-is ``None``, Requests will make an extremely educated guess of the encoding
-of the response body. You can manually set ``r.encoding`` to any encoding
-you'd like, and that charset will be used.
+When you make a request, Requests makes educated guesses about the encoding of
+the response based on the HTTP headers. The text encoding guessed by Requests
+is used when you access ``r.text``. You can find out what encoding Requests is
+using, and change it, using the ``r.encoding`` property::
 
+    >>> r.encoding
+    'utf-8'
+    >>> r.encoding = 'ISO-8859-1'
+
+If you change the encoding, Requests will use the new value of ``r.encoding``
+whenever you call ``r.text``.
+
+Requests will also use custom encodings in the event that you need them. If
+you have created your own encoding and registered it with the ``codecs``
+module, you can simply use the codec name as the value of ``r.encoding`` and
+Requests will handle the decoding for you.
 
 Binary Response Content
 -----------------------
@@ -118,21 +128,22 @@ There's also a builtin JSON decoder, in case you're dealing with JSON data::
 
     >>> import requests
     >>> r = requests.get('https://github.com/timeline.json')
-    >>> r.json
+    >>> r.json()
     [{u'repository': {u'open_issues': 0, u'url': 'https://github.com/...
 
-In case the JSON decoding fails, ``r.json`` simply returns ``None``.
+In case the JSON decoding fails, ``r.json`` raises an exception.
 
 
 Raw Response Content
 --------------------
 
-In the rare case that you'd like to get the absolute raw socket response from the server,
-you can access ``r.raw``::
+In the rare case that you'd like to get the raw socket response from the
+server, you can access ``r.raw``. If you want to do this, make sure you set
+``stream=True`` in your initial request. Once you do, you can do this::
 
+    >>> r = requests.get('https:/github.com/timeline.json', stream=True)
     >>> r.raw
     <requests.packages.urllib3.response.HTTPResponse object at 0x101194810>
-
     >>> r.raw.read(10)
     '\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\x03'
 
@@ -189,14 +200,14 @@ POST a Multipart-Encoded File
 Requests makes it simple to upload Multipart-encoded files::
 
     >>> url = 'http://httpbin.org/post'
-    >>> files = {'report.xls': open('report.xls', 'rb')}
+    >>> files = {'file': open('report.xls', 'rb')}
 
     >>> r = requests.post(url, files=files)
     >>> r.text
     {
       // ...snip... //
       "files": {
-        "report.xls": "<censored...binary...data>"
+        "file": "<censored...binary...data>"
       },
       // ...snip... //
     }
@@ -219,7 +230,7 @@ You can set the filename explicitly::
 If you want, you can send strings to be received as files::
 
     >>> url = 'http://httpbin.org/post'
-    >>> files = {'file': ('report.csv', 'some,data,to,send\nanother,row,to,send\n')} 
+    >>> files = {'file': ('report.csv', 'some,data,to,send\nanother,row,to,send\n')}
 
     >>> r = requests.post(url, files=files)
     >>> r.text
@@ -250,11 +261,11 @@ reference::
 If we made a bad request (non-200 response), we can raise it with
 :class:`Response.raise_for_status()`::
 
-    >>> _r = requests.get('http://httpbin.org/status/404')
-    >>> _r.status_code
+    >>> bad_r = requests.get('http://httpbin.org/status/404')
+    >>> bad_r.status_code
     404
 
-    >>> _r.raise_for_status()
+    >>> bad_r.raise_for_status()
     Traceback (most recent call last):
       File "requests/models.py", line 832, in raise_for_status
         raise http_error
@@ -326,48 +337,6 @@ parameter::
     '{"cookies": {"cookies_are": "working"}}'
 
 
-Basic Authentication
---------------------
-
-Many web services require authentication. There many different types of
-authentication, but the most common is HTTP Basic Auth.
-
-Making requests with Basic Auth is extremely simple::
-
-    >>> from requests.auth import HTTPBasicAuth
-    >>> requests.get('https://api.github.com/user', auth=HTTPBasicAuth('user', 'pass'))
-    <Response [200]>
-
-Due to the prevalence of HTTP Basic Auth, requests provides a shorthand for
-this authentication method::
-
-    >>> requests.get('https://api.github.com/user', auth=('user', 'pass'))
-    <Response [200]>
-
-Providing the credentials as a tuple in this fashion is functionally equivalent
-to the ``HTTPBasicAuth`` example above.
-
-
-Digest Authentication
----------------------
-
-Another popular form of web service protection is Digest Authentication::
-
-    >>> from requests.auth import HTTPDigestAuth
-    >>> url = 'http://httpbin.org/digest-auth/auth/user/pass'
-    >>> requests.get(url, auth=HTTPDigestAuth('user', 'pass'))
-    <Response [200]>
-
-
-OAuth Authentication
---------------------
-
-Miguel Araujo's `requests-oauth <http://pypi.python.org/pypi/requests-oauth>`_
-project provides a simple interface for establishing OAuth connections.
-Documentation and examples can be found on the requests-oauth
-`git repository <https://github.com/maraujop/requests-oauth>`_.
-
-
 Redirection and History
 -----------------------
 
@@ -386,7 +355,7 @@ of the Response object to track redirection. Let's see what Github does::
     [<Response [301]>]
 
 The :class:`Response.history` list contains a list of the
-:class:`Request` objects that were created in order to complete the request.
+:class:`Request` objects that were created in order to complete the request. The list is sorted from the oldest to the most recent request.
 
 If you're using GET or OPTIONS, you can disable redirection handling with the
 ``allow_redirects`` parameter::
