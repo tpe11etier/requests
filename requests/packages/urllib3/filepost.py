@@ -65,21 +65,9 @@ def encode_multipart_formdata(fields, boundary=None):
     for fieldname, value in iter_fields(fields):
         body.write(b('--%s\r\n' % (boundary)))
 
-        #if isinstance(value, tuple):
-         #   filename, data = value
-          #  writer(body).write('Content-Disposition: form-data; name="%s"; ' 'filename="%s"\r\n' % (fieldname, filename))
-           # body.write(b('Content-Type: %s\r\n\r\n' % (get_content_type(filename))))
 
         if isinstance(value, tuple):
-<<<<<<< HEAD
-            filename, data = value
-            
-            body.write(b('Content-Type: application/x-www-form-urlencoded; charset=UTF-8\r\n'))
-            #body.write(b('Content-Type: %s\r\n' % (get_content_type(filename))))
-            writer(body).write('Content-Disposition: form-data; name="%s"\r\n' % fieldname)
-            body.write('\r\n' )
-            
-=======
+
             if len(value) == 3:
                 filename, data, content_type = value
             else:
@@ -89,7 +77,7 @@ def encode_multipart_formdata(fields, boundary=None):
                                'filename="%s"\r\n' % (fieldname, filename))
             body.write(b('Content-Type: %s\r\n\r\n' %
                        (content_type,)))
->>>>>>> upstream/master
+
         else:
             data = value
             writer(body).write('Content-Disposition: form-data; name="%s"\r\n'

@@ -23,7 +23,6 @@ try:
     encode_multipart_formdata = my_encode_multipart_formdata
 except ImportError:
     pass
-from .defaults import SCHEMAS
 from .exceptions import (
     ConnectionError, HTTPError, RequestException, Timeout, TooManyRedirects,
     URLRequired, SSLError, MissingSchema, InvalidSchema, InvalidURL)
