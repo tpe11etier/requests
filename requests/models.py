@@ -17,12 +17,11 @@ from .status_codes import codes
 
 from .auth import HTTPBasicAuth
 from .cookies import cookiejar_from_dict, get_cookie_header
-from .packages.urllib3.filepost import encode_multipart_formdata
 try:
     from oemclient import my_encode_multipart_formdata
     encode_multipart_formdata = my_encode_multipart_formdata
 except ImportError:
-    pass
+    from .packages.urllib3.filepost import encode_multipart_formdata
 from .exceptions import (
     ConnectionError, HTTPError, RequestException, Timeout, TooManyRedirects,
     URLRequired, SSLError, MissingSchema, InvalidSchema, InvalidURL)
